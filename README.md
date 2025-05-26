@@ -81,14 +81,3 @@ Para executar o projeto em seu ambiente local:
 
 6. **Executar as consultas SQL**
    As consultas podem ser executadas diretamente no PostgreSQL para visualizar os indicadores.
-
-## Próximos passos
-
-Para finalizar a entrega do trabalho, precisamos:
-
-1. Criar Documentação no Github.
-2. Gravar um vídeo curto explicando a solução implementada.
-3. Compartilhar o vídeo com o professor conforme as instruções
-
-Sugiro que revisemos juntos o material antes da gravação do vídeo para garantir que todos estejam 
-alinhados com a solução desenvolvida.
