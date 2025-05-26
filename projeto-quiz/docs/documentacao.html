@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Documentação do Projeto de Ingestão e Armazenamento de Dados do QUIZ</title>
+    <style>
+        body {
+            font-family: "Noto Sans", Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            font-size: 28px;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+            font-size: 24px;
+        }
+        h3 {
+            color: #3498db;
+            margin-top: 25px;
+            font-size: 20px;
+        }
+        h4 {
+            color: #2c3e50;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        p, ul, ol {
+            margin-bottom: 15px;
+        }
+        code {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-family: monospace;
+            padding: 2px 4px;
+            font-size: 90%;
+        }
+        pre {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 10px;
+            overflow-x: auto;
+        }
+        pre code {
+            border: none;
+            padding: 0;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 20px auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+        .toc {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .toc ul {
+            list-style-type: none;
+            padding-left: 20px;
+        }
+        .toc li {
+            margin-bottom: 5px;
+        }
+        .toc a {
+            text-decoration: none;
+            color: #3498db;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        .sql {
+            background-color: #f5f5f5;
+            border-left: 4px solid #3498db;
+            padding: 10px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Documentação do Projeto de Ingestão e Armazenamento de Dados do QUIZ</h1>
+    
+    <div class="toc">
+        <h2>Índice</h2>
+        <ul>
+            <li><a href="#introducao">1. Introdução</a></li>
+            <li><a href="#arquitetura">2. Arquitetura do Sistema</a></li>
+            <li><a href="#modelagem-redis">3. Modelagem de Dados no Redis</a></li>
+            <li><a href="#carga-dados">4. Exemplos de Carga de Dados</a></li>
+            <li><a href="#ingestao">5. Mecanismo de Ingestão</a></li>
+            <li><a href="#consultas">6. Consultas SQL para Indicadores</a></li>
+            <li><a href="#implementacao">7. Implementação e Testes</a></li>
+            <li><a href="#conclusao">8. Conclusão</a></li>
+            <li><a href="#referencias">9. Referências</a></li>
+        </ul>
+    </div>
+    
+    <div class="page-break"></div>
+    
+    <h2 id="introducao">1. Introdução</h2>
+    <p>Este documento apresenta o projeto de ingestão e armazenamento de dados para um sistema de Quiz, utilizando Redis como banco intermediário e PostgreSQL como Data Warehouse (DW). O projeto foi desenvolvido como trabalho final da disciplina In Memory DB do MBA.</p>
+    <p>O objetivo principal é implementar um mecanismo eficiente de ingestão de dados que permita a transferência de informações do Redis para o PostgreSQL, com foco na estruturação dos dados e geração de indicadores relevantes para análise de desempenho dos usuários e qualidade das questões.</p>
+    
+    <h2 id="arquitetura">2. Arquitetura do Sistema</h2>
+    <p>A arquitetura do sistema é composta por três componentes principais:</p>
+    <ol>
+        <li><strong>Redis (Banco de Dados em Memória)</strong>: Armazena os dados operacionais do Quiz, incluindo questões e respostas dos usuários.</li>
+        <li><strong>Mecanismo de Ingestão</strong>: Transfere os dados do Redis para o PostgreSQL de forma contínua e confiável.</li>
+        <li><strong>PostgreSQL (Data Warehouse)</strong>: Armazena os dados em um formato estruturado para análise e geração de indicadores.</li>
+    </ol>
+    <img src="arquitetura.png" alt="Arquitetura do Sistema">
+    
+    <div class="page-break"></div>
+    
+    <h2 id="modelagem-redis">3. Modelagem de Dados no Redis</h2>
+    
+    <h3>3.1 Estruturas de Dados Utilizadas</h3>
+    <p>Para o sistema de Quiz, utilizamos principalmente <strong>Hashes</strong> (tabelas hash) no Redis, que permitem armazenar campos e valores associados a uma chave.</p>
+    
+    <h3>3.2 Entidades Principais</h3>
+    
+    <h4>3.2.1 Questões (Questions)</h4>
+    <p>As questões são armazenadas como hashes no Redis, com a seguinte estrutura:</p>
+    <p><strong>Chave</strong>: <code>question:{question_id}</code></p>
+    <p><strong>Campos</strong>:</p>
+    <ul>
+        <li><code>question_text</code>: Texto da pergunta</li>
+        <li><code>alternativa_a</code>: Texto da alternativa A</li>
+        <li><code>alternativa_b</code>: Texto da alternativa B</li>
+        <li><code>alternativa_c</code>: Texto da alternativa C</li>
+        <li><code>alternativa_d</code>: Texto da alternativa D</li>
+        <li><code>alternativa_correta</code>: Alternativa correta (a, b, c ou d)</li>
+        <li><code>dificuldade</code>: Nível de dificuldade da questão (fácil, médio, difícil)</li>
+        <li><code>assunto</code>: Assunto ou categoria da questão</li>
+    </ul>
+    <p><strong>Exemplo</strong>:</p>
+    <pre><code>HSET question:1 question_text "Qual é a resposta de tudo?" alternativa_a "1" alternativa_b "23" alternativa_c "42" alternativa_d "11" alternativa_correta "c" dificuldade "fácil" assunto "geek"</code></pre>
+    
+    <h4>3.2.2 Respostas (Answers)</h4>
+    <p>As respostas dos usuários são armazenadas como hashes no Redis, com a seguinte estrutura:</p>
+    <p><strong>Chave</strong>: <code>answer:{usuario}:{question_id}:{nro_tentativa}</code></p>
+    <p><strong>Campos</strong>:</p>
+    <ul>
+        <li><code>question_id</code>: ID da questão respondida</li>
+        <li><code>alternativa_escolhida</code>: Alternativa escolhida pelo usuário (a, b, c ou d)</li>
+        <li><code>datahora</code>: Data e hora em que a resposta foi registrada</li>
+        <li><code>usuario</code>: Nome do usuário que respondeu</li>
+        <li><code>nro_tentativa</code>: Número da tentativa do usuário para esta questão</li>
+    </ul>
+    <p><strong>Exemplo</strong>:</p>
+    <pre><code>HSET answer:dlemes:1:1 question_id 1 alternativa_escolhida "c" datahora "19/05/2025 09:47" usuario "dlemes" nro_tentativa 1</code></pre>
+    
+    <div class="page-break"></div>
+    
+    <h3>3.3 Estruturas Auxiliares</h3>
+    
+    <h4>3.3.1 Índices para Consultas Rápidas</h4>
+    <p>Para facilitar consultas específicas, utilizamos conjuntos (Sets) como índices:</p>
+    <p><strong>Questões por Assunto</strong>:</p>
+    <ul>
+        <li>Chave: <code>index:assunto:{nome_do_assunto}</code></li>
+        <li>Valores: IDs das questões relacionadas ao assunto</li>
+    </ul>
+    <p><strong>Questões por Dificuldade</strong>:</p>
+    <ul>
+        <li>Chave: <code>index:dificuldade:{nivel_dificuldade}</code></li>
+        <li>Valores: IDs das questões com o nível de dificuldade especificado</li>
+    </ul>
+    
+    <h4>3.3.2 Contadores</h4>
+    <p>Para facilitar a geração de IDs únicos e estatísticas:</p>
+    <p><strong>Contador de Questões</strong>:</p>
+    <ul>
+        <li>Chave: <code>counter:question</code></li>
+        <li>Valor: Número total de questões cadastradas</li>
+    </ul>
+    <p><strong>Contador de Respostas por Usuário</strong>:</p>
+    <ul>
+        <li>Chave: <code>counter:answers:{usuario}</code></li>
+        <li>Valor: Número total de respostas do usuário</li>
+    </ul>
+    
+    <h3>3.4 Justificativa das Escolhas</h3>
+    <p>A escolha de hashes para representar as entidades principais se deve à eficiência de armazenamento, possibilidade de operações atômicas, recuperação parcial de dados e organização lógica das entidades.</p>
+    <p>A estrutura de chaves foi projetada para facilitar buscas, evitar colisões e suportar padrões de busca para recuperação de grupos de dados relacionados.</p>
+    <p>Os índices auxiliares e contadores foram incluídos para melhorar a performance de consultas, facilitar a geração de relatórios e estatísticas, e suportar consultas complexas.</p>
+    
+    <div class="page-break"></div>
+    
+    <h2 id="carga-dados">4. Exemplos de Carga de Dados</h2>
+    
+    <h3>4.1 Script de Carga</h3>
+    <p>Foi desenvolvido um script Python para carregar dados simulados no Redis, seguindo a modelagem definida. O script realiza as seguintes operações:</p>
+    <ol>
+        <li>Estabelece conexão com o Redis</li>
+        <li>Limpa dados existentes (se necessário)</li>
+        <li>Carrega questões simuladas</li>
+        <li>Carrega respostas simuladas</li>
+        <li>Atualiza índices e contadores</li>
+    </ol>
+    <p>O script também salva os dados simulados em arquivos JSON para referência futura.</p>
+    
+    <h3>4.2 Dados Simulados</h3>
+    <p>Foram criados dados simulados para questões e respostas, abrangendo diferentes assuntos, níveis de dificuldade e padrões de resposta dos usuários.</p>
+    <p><strong>Exemplo de Questão Simulada</strong>:</p>
+    <pre><code>{
+  "question_id": 1,
+  "question_text": "Qual é a principal vantagem do Redis como banco de dados em memória?",
+  "alternativa_a": "Armazenamento em disco",
+  "alternativa_b": "Alta velocidade de acesso",
+  "alternativa_c": "Suporte nativo a SQL",
+  "alternativa_d": "Baixo consumo de memória",
+  "alternativa_correta": "b",
+  "dificuldade": "fácil",
+  "assunto": "banco de dados"
+}</code></pre>
+    <p><strong>Exemplo de Resposta Simulada</strong>:</p>
+    <pre><code>{
+  "question_id": 1,
+  "alternativa_escolhida": "b",
+  "datahora": "22/05/2025 10:15",
+  "usuario": "maria",
+  "nro_tentativa": 1
+}</code></pre>
+    
+    <div class="page-break"></div>
+    
+    <h2 id="ingestao">5. Mecanismo de Ingestão</h2>
+    
+    <h3>5.1 Arquitetura do Mecanismo</h3>
+    <p>O mecanismo de ingestão foi implementado como um script Python que realiza as seguintes operações:</p>
+    <ol>
+        <li>Conecta-se ao Redis e ao PostgreSQL</li>
+        <li>Cria as tabelas necessárias no PostgreSQL (se não existirem)</li>
+        <li>Processa questões do Redis e insere no PostgreSQL</li>
+        <li>Processa respostas do Redis e insere no PostgreSQL</li>
+        <li>Registra logs de ingestão para rastreabilidade</li>
+        <li>Executa em loop contínuo, verificando novas entradas a cada intervalo definido</li>
+    </ol>
+    
+    <h3>5.2 Modelagem no PostgreSQL</h3>
+    <p>A modelagem no PostgreSQL segue o padrão de Data Warehouse, com tabelas de dimensão e fato:</p>
+    <p><strong>Tabelas de Dimensão</strong>:</p>
+    <ul>
+        <li><code>dim_assunto</code>: Armazena os assuntos das questões</li>
+        <li><code>dim_dificuldade</code>: Armazena os níveis de dificuldade</li>
+        <li><code>dim_usuario</code>: Armazena os usuários que responderam às questões</li>
+    </ul>
+    <p><strong>Tabelas de Fato</strong>:</p>
+    <ul>
+        <li><code>fato_questao</code>: Armazena as questões com referências às dimensões</li>
+        <li><code>fato_resposta</code>: Armazena as respostas dos usuários com referências às questões e usuários</li>
+    </ul>
+    <p><strong>Tabela de Log</strong>:</p>
+    <ul>
+        <li><code>log_ingestao</code>: Registra o processo de ingestão para rastreabilidade</li>
+    </ul>
+    
+    <h3>5.3 Processo de Ingestão</h3>
+    <p>O processo de ingestão segue estas etapas para cada entidade:</p>
+    <ol>
+        <li>Recupera as chaves do Redis para a entidade</li>
+        <li>Verifica se o registro já existe no PostgreSQL</li>
+        <li>Obtém ou cria registros nas tabelas de dimensão relacionadas</li>
+        <li>Insere o registro na tabela de fato correspondente</li>
+        <li>Registra o resultado da operação na tabela de log</li>
+    </ol>
+    <p>O mecanismo também implementa tratamento de erros e transações para garantir a consistência dos dados.</p>
+    
+    <div class="page-break"></div>
+    
+    <h2 id="consultas">6. Consultas SQL para Indicadores</h2>
+    <p>Foram desenvolvidas consultas SQL para gerar indicadores relevantes para análise do sistema de Quiz:</p>
+    
+    <h3>6.1 Taxa de Acerto por Questão</h3>
+    <div class="sql">
+    <pre><code>SELECT 
+    q.question_id,
+    q.question_text,
+    a.nome AS assunto,
+    d.nivel AS dificuldade,
+    COUNT(r.id) AS total_respostas,
+    SUM(CASE WHEN r.is_correct THEN 1 ELSE 0 END) AS total_acertos,
+    ROUND((SUM(CASE WHEN r.is_correct THEN 1 ELSE 0 END)::FLOAT / COUNT(r.id)) * 100, 2) AS taxa_acerto
+FROM 
+    fato_questao q
+    JOIN dim_assunto a ON q.id_assunto = a.id
+    JOIN dim_dificuldade d ON q.id_dificuldade = d.id
+    LEFT JOIN fato_resposta r ON q.question_id = r.id_questao
+GROUP BY 
+    q.question_id, q.question_text, a.nome, d.nivel
+ORDER BY 
+    taxa_acerto DESC;</code></pre>
+    </div>
+    
+    <h3>6.2 Desempenho por Usuário</h3>
+    <div class="sql">
+    <pre><code>SELECT 
+    u.nome AS usuario,
+    COUNT(r.id) AS total_respostas,
+    SUM(CASE WHEN r.is_correct THEN 1 ELSE 0 END) AS total_acertos,
+    ROUND((SUM(CASE WHEN r.is_correct THEN 1 ELSE 0 END)::FLOAT / COUNT(r.id)) * 100, 2) AS taxa_acerto
+FROM 
+    fato_resposta r
+    JOIN dim_usuario u ON r.id_usuario = u.id
+GROUP BY 
+    u.nome
+ORDER BY 
+    taxa_acerto DESC;</code></pre>
+    </div>
+    
+    <h3>6.3 Dificuldade Real vs. Dificuldade Cadastrada</h3>
+    <div class="sql">
+    <pre><code>SELECT 
+    q.question_id,
+    q.question_text,
+    d.nivel AS dificuldade_cadastrada,
+    COUNT(r.id) AS total_respostas,
+    ROUND((SUM(CASE WHEN r.is_correct THEN 1 ELSE 0 END)::FLOAT / COUNT(r.id)) * 100, 2) AS taxa_acerto,
+    CASE 
+        WHEN (SUM(CASE WHEN r.is_correct THEN 1 ELSE 0 END)::FLOAT / COUNT(r.id)) * 100 < 40 THEN 'difícil'
+        WHEN (SUM(CASE WHEN r.is_correct THEN 1 ELSE 0 END)::FLOAT / COUNT(r.id)) * 100 < 70 THEN 'médio'
+        ELSE 'fácil'
+    END AS dificuldade_real
+FROM 
+    fato_questao q
+    JOIN dim_dificuldade d ON q.id_dificuldade = d.id
+    LEFT JOIN fato_resposta r ON q.question_id = r.id_questao
+GROUP BY 
+    q.question_id, q.question_text, d.nivel
+HAVING 
+    COUNT(r.id) > 0
+ORDER BY 
+    taxa_acerto;</code></pre>
+    </div>
+    
+    <div class="page-break"></div>
+    
+    <h3>6.4 Distribuição de Respostas por Alternativa</h3>
+    <div class="sql">
+    <pre><code>SELECT 
+    q.question_id,
+    q.question_text,
+    COUNT(r.id) AS total_respostas,
+    SUM(CASE WHEN r.alternativa_escolhida = 'a' THEN 1 ELSE 0 END) AS alternativa_a,
+    SUM(CASE WHEN r.alternativa_escolhida = 'b' THEN 1 ELSE 0 END) AS alternativa_b,
+    SUM(CASE WHEN r.alternativa_escolhida = 'c' THEN 1 ELSE 0 END) AS alternativa_c,
+    SUM(CASE WHEN r.alternativa_escolhida = 'd' THEN 1 ELSE 0 END) AS alternativa_d,
+    ROUND((SUM(CASE WHEN r.alternativa_escolhida = 'a' THEN 1 ELSE 0 END)::FLOAT / COUNT(r.id)) * 100, 2) AS pct_a,
+    ROUND((SUM(CASE WHEN r.alternativa_escolhida = 'b' THEN 1 ELSE 0 END)::FLOAT / COUNT(r.id)) * 100, 2) AS pct_b,
+    ROUND((SUM(CASE WHEN r.alternativa_escolhida = 'c' THEN 1 ELSE 0 END)::FLOAT / COUNT(r.id)) * 100, 2) AS pct_c,
+    ROUND((SUM(CASE WHEN r.alternativa_escolhida = 'd' THEN 1 ELSE 0 END)::FLOAT / COUNT(r.id)) * 100, 2) AS pct_d,
+    q.alternativa_correta
+FROM 
+    fato_questao q
+    LEFT JOIN fato_resposta r ON q.question_id = r.id_questao
+GROUP BY 
+    q.question_id, q.question_text, q.alternativa_correta
+HAVING 
+    COUNT(r.id) > 0
+ORDER BY 
+    q.question_id;</code></pre>
+    </div>
+    
+    <h3>6.5 Progresso por Assunto</h3>
+    <div class="sql">
+    <pre><code>SELECT 
+    a.nome AS assunto,
+    u.nome AS usuario,
+    COUNT(r.id) AS total_respostas,
+    SUM(CASE WHEN r.is_correct THEN 1 ELSE 0 END) AS total_acertos,
+    ROUND((SUM(CASE WHEN r.is_correct THEN 1 ELSE 0 END)::FLOAT / COUNT(r.id)) * 100, 2) AS taxa_acerto
+FROM 
+    fato_resposta r
+    JOIN fato_questao q ON r.id_questao = q.question_id
+    JOIN dim_assunto a ON q.id_assunto = a.id
+    JOIN dim_usuario u ON r.id_usuario = u.id
+GROUP BY 
+    a.nome, u.nome
+ORDER BY 
+    a.nome, taxa_acerto DESC;</code></pre>
+    </div>
+    
+    <div class="page-break"></div>
+    
+    <h2 id="implementacao">7. Implementação e Testes</h2>
+    
+    <h3>7.1 Ambiente de Desenvolvimento</h3>
+    <p>O projeto foi implementado em um ambiente Linux com as seguintes tecnologias:</p>
+    <ul>
+        <li>Redis 6.0.16</li>
+        <li>PostgreSQL 14</li>
+        <li>Python 3.11</li>
+        <li>Bibliotecas Python: redis, psycopg2, json, datetime</li>
+    </ul>
+    
+    <h3>7.2 Testes Realizados</h3>
+    <p>Foram realizados os seguintes testes para validar o projeto:</p>
+    <ol>
+        <li><strong>Teste de Carga no Redis</strong>: Verificação da inserção correta de questões e respostas no Redis.</li>
+        <li><strong>Teste de Ingestão</strong>: Verificação da transferência correta dos dados do Redis para o PostgreSQL.</li>
+        <li><strong>Teste de Consultas</strong>: Validação das consultas SQL para geração de indicadores.</li>
+    </ol>
+    
+    <h3>7.3 Resultados dos Testes</h3>
+    <p>Os testes foram bem-sucedidos, com os seguintes resultados:</p>
+    <ul>
+        <li><strong>Carga no Redis</strong>: Foram carregadas 5 questões e 13 respostas simuladas.</li>
+        <li><strong>Ingestão para PostgreSQL</strong>: Todos os dados foram transferidos corretamente, com registros de log para rastreabilidade.</li>
+        <li><strong>Consultas SQL</strong>: As consultas geraram os indicadores esperados, permitindo análises detalhadas do desempenho dos usuários e da qualidade das questões.</li>
+    </ul>
+    
+    <div class="page-break"></div>
+    
+    <h2 id="conclusao">8. Conclusão</h2>
+    <p>O projeto implementou com sucesso um mecanismo de ingestão de dados para um sistema de Quiz, utilizando Redis como banco intermediário e PostgreSQL como Data Warehouse. A solução permite a transferência eficiente de dados entre os sistemas, com estruturação adequada para análise e geração de indicadores relevantes.</p>
+    <p>Os principais objetivos alcançados foram:</p>
+    <ol>
+        <li>Modelagem eficiente das entidades no Redis</li>
+        <li>Implementação de scripts de carga para dados simulados</li>
+        <li>Desenvolvimento de um mecanismo robusto de ingestão</li>
+        <li>Modelagem adequada no PostgreSQL para análise de dados</li>
+        <li>Criação de consultas SQL para geração de indicadores</li>
+    </ol>
+    <p>O sistema está pronto para ser utilizado em um ambiente de produção, com capacidade para processar grandes volumes de dados e gerar insights valiosos sobre o desempenho dos usuários e a qualidade das questões do Quiz.</p>
+    
+    <h2 id="referencias">9. Referências</h2>
+    <ul>
+        <li><a href="https://redis.io/documentation">Redis Documentation</a></li>
+        <li><a href="https://www.postgresql.org/docs/">PostgreSQL Documentation</a></li>
+        <li><a href="https://docs.python.org/3/">Python Documentation</a></li>
+        <li><a href="https://github.com/commithouse/redis-to-postgres">Redis to PostgreSQL Repository</a></li>
+        <li><a href="https://github.com/commithouse/apiQuestionRedis">API Question Redis Repository</a></li>
+    </ul>
+</body>
+</html>

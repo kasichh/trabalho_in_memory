@@ -1,0 +1,57 @@
+[
+  {
+    "question_id": 1,
+    "question_text": "Qual é a principal vantagem do Redis como banco de dados em memória?",
+    "alternativa_a": "Armazenamento em disco",
+    "alternativa_b": "Alta velocidade de acesso",
+    "alternativa_c": "Suporte nativo a SQL",
+    "alternativa_d": "Baixo consumo de memória",
+    "alternativa_correta": "b",
+    "dificuldade": "fácil",
+    "assunto": "banco de dados"
+  },
+  {
+    "question_id": 2,
+    "question_text": "Qual estrutura de dados do Redis é mais adequada para armazenar dados de sessão?",
+    "alternativa_a": "Lists",
+    "alternativa_b": "Sets",
+    "alternativa_c": "Sorted Sets",
+    "alternativa_d": "Hashes",
+    "alternativa_correta": "d",
+    "dificuldade": "médio",
+    "assunto": "redis"
+  },
+  {
+    "question_id": 3,
+    "question_text": "Qual comando é usado para definir um tempo de expiração para uma chave no Redis?",
+    "alternativa_a": "EXPIRE",
+    "alternativa_b": "TTL",
+    "alternativa_c": "TIMEOUT",
+    "alternativa_d": "DEADLINE",
+    "alternativa_correta": "a",
+    "dificuldade": "fácil",
+    "assunto": "redis"
+  },
+  {
+    "question_id": 4,
+    "question_text": "Qual é o principal uso do RedisGears?",
+    "alternativa_a": "Processamento de imagens",
+    "alternativa_b": "Execução de funções serverless",
+    "alternativa_c": "Processamento de dados em tempo real",
+    "alternativa_d": "Gerenciamento de filas",
+    "alternativa_correta": "c",
+    "dificuldade": "difícil",
+    "assunto": "redis"
+  },
+  {
+    "question_id": 5,
+    "question_text": "Qual é a melhor estrutura de dados do Redis para implementar um ranking?",
+    "alternativa_a": "Lists",
+    "alternativa_b": "Sets",
+    "alternativa_c": "Hashes",
+    "alternativa_d": "Sorted Sets",
+    "alternativa_correta": "d",
+    "dificuldade": "médio",
+    "assunto": "redis"
+  }
+]
